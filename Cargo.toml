@@ -1,0 +1,10 @@
+[package]
+name = "eden"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bootloader = "0.10.13"
+
+[workspace]
+members = ["boot"]

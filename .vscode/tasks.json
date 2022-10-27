@@ -1,0 +1,62 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build Kernel Binary",
+            "type": "shell",
+            "command": "cargo",
+            "args": [
+                "build",
+                "--target=x86_64-eden.json",
+                "-Zbuild-std=core,compiler_builtins",
+                "-Zbuild-std-features=compiler-builtins-mem"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Build Boot Image",
+            "type": "shell",
+            "command": "cargo",
+            "args": [
+                "run",
+                "-p",
+                "boot"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Run Legacy Boot Image In QEMU",
+            "type": "shell",
+            "command": "qemu-system-x86_64",
+            "args": [
+                "-drive",
+                "format=raw,file=target/x86_64-eden/debug/boot-bios-eden.img"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Run UEFI Boot Image In QEMU",
+            "type": "shell",
+            "command": "qemu-system-x86_64",
+            "args": [
+                "-bios",
+                "boot/OVMF.fd",
+                "-drive",
+                "format=raw,file=target/x86_64-eden/debug/boot-uefi-eden.img"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}
