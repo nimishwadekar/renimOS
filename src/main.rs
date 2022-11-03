@@ -4,6 +4,7 @@
 use bootloader::{entry_point, BootInfo};
 
 mod serial;
+mod fonts;
 
 entry_point!(kernel_main);
 
@@ -16,7 +17,11 @@ fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
     framebuffer.buffer_mut()[2] = 0xFF;
     framebuffer.buffer_mut()[3] = 0xFF;
 
-    serial_println!("{:#?}", boot_info);
+    serial_println!("Hello Eden!");
+    //serial_println!("{:#?}", boot_info);
+
+    let psf = fonts::PSF::parse(include_bytes!("fonts/files/zap-light16.psf")).unwrap();
+    serial_println!("psf loaded");
 
     loop {}
 }
