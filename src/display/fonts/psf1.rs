@@ -13,7 +13,7 @@ const MODE_512: u8 = 0x01;
 //const SEPARATOR: u16 = 0xFFFF;
 //const START_SEQ: u16 = 0xFFFE;
 
-//const WIDTH: u8 = 8;
+const WIDTH: usize = 8;
 
 //================================================
 //  TYPES
@@ -45,7 +45,7 @@ impl<'font> PSF1<'font> {
     }
 
     /// Returns invalid character glyph for non-supported characters.
-    pub fn get_bitmap(&self, ch: char) -> &'font [u8] {
+    pub fn bitmap(&self, ch: char) -> &'font [u8] {
         let glyph = if (ch as usize) < self.num_glyphs {
             ch as usize
         } else {
@@ -54,4 +54,8 @@ impl<'font> PSF1<'font> {
 
         &self.glyphs[glyph * self.charsize .. (glyph + 1) * self.charsize]
     }
+
+    pub fn width(&self) -> usize { WIDTH }
+
+    pub fn height(&self) -> usize { self.charsize }
 }
