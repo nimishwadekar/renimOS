@@ -187,32 +187,23 @@ fn writer() -> &'static SpinLock<Writer> {
 }
 
 #[macro_export]
-macro_rules! print {
-    ($($arg:tt)*) => ($crate::display::_print(format_args!($($arg)*)));
+macro_rules! kprint {
+    ($($arg:tt)*) => ($crate::display::_kprint(format_args!($($arg)*)));
 }
 
 #[macro_export]
-macro_rules! println {
-    () => ($crate::print!("\n"));
-    ($($arg:tt)*) => ($crate::print!("{}\n", format_args!($($arg)*)));
+macro_rules! kprintln {
+    () => ($crate::kprint!("\n"));
+    ($($arg:tt)*) => ($crate::kprint!("{}\n", format_args!($($arg)*)));
 }
 
 #[doc(hidden)]
-pub fn _print(args: core::fmt::Arguments) {
+pub fn _kprint(args: core::fmt::Arguments) {
     use core::fmt::Write;
-    let mut a = writer().lock();
-    let mut b = writer().lock();
-    a.write_fmt(args).unwrap();
-    
+    writer().lock().write_fmt(args).unwrap_or_else(|_e| loop {});
 }
 
-/// Returns true if the framebuffer was initialized.
-pub fn init_display(framebuffer: Option<&FrameBuffer>) -> bool {
-    let fb = match framebuffer {
-        Some(fb) => fb,
-        None => return false,
-    };
-
+pub fn init(fb: &FrameBuffer) {
     let buffer_start = fb.buffer().as_ptr() as usize;
     let buffer_byte_len = fb.buffer().len();
     
@@ -230,6 +221,4 @@ pub fn init_display(framebuffer: Option<&FrameBuffer>) -> bool {
         },
         font: PSF::parse(include_bytes!("fonts/files/zap-light16.psf")).unwrap(),
     })); }
-
-    true
 }

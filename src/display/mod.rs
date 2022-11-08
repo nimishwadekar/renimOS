@@ -3,5 +3,5 @@ mod fonts;
 mod writer;
 
 pub use colour::Colour;
-pub use writer::init_display;
-pub use writer::_print;
+pub use writer::init;
+pub use writer::_kprint;
