@@ -1,8 +1,1 @@
-pub mod interrupts;
-
-pub trait InterruptFunctions {
-    fn disable();
-    fn enable();
-    fn are_enabled() -> bool;
-    fn init();
-}
+pub mod x86_64;
