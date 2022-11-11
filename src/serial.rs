@@ -1,8 +1,11 @@
 use uart_16550::SerialPort;
 use crate::{spinlock::SpinLock, init_guard};
 
+#[allow(dead_code)]
 pub const RED: &str = "\x1B[31m";
+#[allow(dead_code)]
 pub const GREEN: &str = "\x1B[32m";
+#[allow(dead_code)]
 pub const RESET_COLOUR: &str = "\x1B[0m";
 
 static mut SERIAL1: Option<SpinLock<SerialPort>> = None;

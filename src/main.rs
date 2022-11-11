@@ -29,10 +29,16 @@ fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
 
     let fb = boot_info.framebuffer.as_ref().unwrap_or_else(|| crate::prelude::serial_panic("No framebuffer")); // hang if no framebuffer.
     display::init(fb);
+    display::clear_screen();
     kprintln!("Display init");
 
     interrupts::init();
 
+    unsafe {
+        //*(0xdeadbeef as *mut u64) = 42;
+    }
+
+    kprintln_with_colour!(display::Colour::OK, "Eden initialisation completed");
     loop {}
 }
 

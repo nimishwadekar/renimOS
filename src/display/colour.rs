@@ -32,6 +32,15 @@ impl Colour {
     #[allow(dead_code)]
     pub const YELLOW: Colour = Colour::new(0xFF, 0xFF, 0);
 
+    #[allow(dead_code)]
+    pub const OK: Colour = Colour::new(0x22, 0xd1, 0x85);
+    #[allow(dead_code)]
+    pub const ERROR: Colour = Colour::new(0xf0, 0x54, 0x54);
+    #[allow(dead_code)]
+    pub const WARN: Colour = Colour::new(0xf4, 0xf4, 0x43);
+    #[allow(dead_code)]
+    pub const INFO: Colour = Colour::new(0x33, 0x8e, 0xea);
+
     pub const fn new(r: u8, g: u8, b: u8) -> Self {
         Self { r, g, b }
     }

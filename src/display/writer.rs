@@ -66,6 +66,13 @@ impl Writer {
     pub fn set_colour_bg(&mut self, colour: Colour) { self.colour_bg = colour; }
     pub fn set_colour_fg(&mut self, colour: Colour) { self.colour_fg = colour; }
 
+    pub fn clear_screen(&mut self) {
+        let pixel_bg = self.buffer.get_pixel(self.colour_bg);
+        for offset in (0..self.buffer.buffer.len()).step_by(pixel_bg.len()) {
+            self.buffer.write_pixel(offset, pixel_bg);
+        }
+    }
+
     pub fn write_char(&mut self, ch: char) {
         let width = self.font.width;
         let height = self.font.height;
@@ -214,6 +221,10 @@ fn writer() -> &'static SpinLock<Writer> {
     unsafe { WRITER.as_ref().unwrap_or_else(|| serial_panic("display not initialised")) }
 }
 
+pub fn clear_screen() {
+    writer().lock().clear_screen();
+}
+
 #[macro_export]
 macro_rules! kprint {
     ($($arg:tt)*) => ($crate::display::_kprint(format_args!($($arg)*)));
@@ -246,14 +257,14 @@ pub fn init(fb: &FrameBuffer) {
     
     unsafe { WRITER = Some(SpinLock::new(Writer {
         column: 0,
-        colour_fg: Colour::WHITE,
-        colour_bg: Colour::BLACK,
+        colour_fg: Colour::new(0xd4, 0xd4, 0xd4),
+        colour_bg: Colour::new(0x1e, 0x1e, 0x1e),
         buffer: Buffer {
             framebuffer: core::slice::from_raw_parts_mut(buffer_start as *mut u8, buffer_byte_len),
             buffer: &mut BACKBUFFER[..buffer_byte_len],
             info: fb.info()
         },
-        font: PSF::parse(include_bytes!("fonts/files/zap-light20.psf")).unwrap_or_else(|| serial_panic("PSF::parse() failed")),
+        font: PSF::parse(include_bytes!("fonts/files/zap-light16.psf")).unwrap_or_else(|| serial_panic("PSF::parse() failed")),
     })); }
 }
 
@@ -281,75 +292,91 @@ pub fn _kprint_with_colour(colour: Colour, args: core::fmt::Arguments) {
 //  UNIT TESTS
 //================================================
 
-#[test_case]
-fn kprintln_simple() {
-    kprintln!("kprintln_simple output");
-}
-
-#[test_case]
-fn kprintln_many() {
-    for _ in 0..30 {
-        kprintln!("kprintln_many output");
+#[cfg(test)]
+mod tests {
+    #[test_case]
+    fn kprintln_simple() {
+        kprintln!("kprintln_simple output");
     }
-}
 
-#[test_case]
-fn kprintln_output() {
-    let s = "Some test string that fits on a single line";
-    kprintln!("\n{}", s);
+    #[test_case]
+    fn kprintln_many() {
+        for _ in 0..30 {
+            kprintln!("kprintln_many output");
+        }
+    }
 
-    let writer = writer().lock();
-    let buf = &writer.buffer.buffer;
-    
-    let pixel_fg = writer.buffer.get_pixel(writer.colour_fg);
-    let pixel_bg = writer.buffer.get_pixel(writer.colour_bg);
-    let pixel_len = pixel_fg.len();
+    #[test_case]
+    fn kprintln_output() {
+        let s = "Some test string that fits on a single line";
+        kprintln!("\n{}", s);
 
-    let width = writer.font.width;
+        let writer = super::writer().lock();
+        let buf = &writer.buffer.buffer;
+        
+        let pixel_fg = writer.buffer.get_pixel(writer.colour_fg);
+        let pixel_bg = writer.buffer.get_pixel(writer.colour_bg);
+        let pixel_len = pixel_fg.len();
 
-    let row = writer.buffer.info.vertical_resolution - 2 * writer.font.height;
-    let mut col = 0;
+        let width = writer.font.width;
 
-    for (i, c) in s.chars().enumerate() {
-        let bitmap = writer.font.bitmap(c);
+        let row = writer.buffer.info.vertical_resolution - 2 * writer.font.height;
+        let mut col = 0;
 
-        let bytes_per_row = (width + 7) >> 3; // divide by 8
-        let partial_bits = width & 7; // modulo 8
+        for (i, c) in s.chars().enumerate() {
+            let bitmap = writer.font.bitmap(c);
+
+            let bytes_per_row = (width + 7) >> 3; // divide by 8
+            let partial_bits = width & 7; // modulo 8
+
+            use core::ops::Deref;
+            for (r, row_chunk) in bitmap.chunks(bytes_per_row).enumerate() {
+                let (row_chunk, rem_byte) = if partial_bits == 0 {
+                    (row_chunk, None)
+                } else {
+                    (&row_chunk[..bytes_per_row - 1], Some(row_chunk[bytes_per_row - 1]))
+                };
+
+                let row = row + r;
+                for (byte_id, byte) in row_chunk.iter().enumerate() {
+                    let col = col + (byte_id << 3); // multiply by 8
+                    for c in 0..8 {
+                        let offset = writer.buffer.offset(row, col + c) * writer.buffer.info.bytes_per_pixel;
+                        if (0b1000_0000 >> c) & byte != 0 {
+                            assert_eq!(&buf[offset..offset + pixel_len], pixel_fg.deref());
+                        } else {
+                            assert_eq!(&buf[offset..offset + pixel_len], pixel_bg.deref());
+                        }
+                    }
+                }
+
+                if let Some(rem_byte) = rem_byte {
+                    let col = col + (row_chunk.len() << 3);
+                    for c in 0..partial_bits {
+                        let offset = writer.buffer.offset(row, col + c) * writer.buffer.info.bytes_per_pixel;
+                        if (0b1000_0000 >> c) & rem_byte != 0 {
+                            assert_eq!(&buf[offset..offset + pixel_len], pixel_fg.deref());
+                        } else {
+                            assert_eq!(&buf[offset..offset + pixel_len], pixel_bg.deref());
+                        }
+                    }
+                }
+            }
+
+            col += width;
+        }
+    }
+
+    #[test_case]
+    fn clear_screen() {
+        super::clear_screen();
+
+        let writer = super::writer().lock();
+        let pixel_bg = writer.buffer.get_pixel(writer.colour_bg);
 
         use core::ops::Deref;
-        for (r, row_chunk) in bitmap.chunks(bytes_per_row).enumerate() {
-            let (row_chunk, rem_byte) = if partial_bits == 0 {
-                (row_chunk, None)
-            } else {
-                (&row_chunk[..bytes_per_row - 1], Some(row_chunk[bytes_per_row - 1]))
-            };
-
-            let row = row + r;
-            for (byte_id, byte) in row_chunk.iter().enumerate() {
-                let col = col + (byte_id << 3); // multiply by 8
-                for c in 0..8 {
-                    let offset = writer.buffer.offset(row, col + c) * writer.buffer.info.bytes_per_pixel;
-                    if (0b1000_0000 >> c) & byte != 0 {
-                        assert_eq!(&buf[offset..offset + pixel_len], pixel_fg.deref());
-                    } else {
-                        assert_eq!(&buf[offset..offset + pixel_len], pixel_bg.deref());
-                    }
-                }
-            }
-
-            if let Some(rem_byte) = rem_byte {
-                let col = col + (row_chunk.len() << 3);
-                for c in 0..partial_bits {
-                    let offset = writer.buffer.offset(row, col + c) * writer.buffer.info.bytes_per_pixel;
-                    if (0b1000_0000 >> c) & rem_byte != 0 {
-                        assert_eq!(&buf[offset..offset + pixel_len], pixel_fg.deref());
-                    } else {
-                        assert_eq!(&buf[offset..offset + pixel_len], pixel_bg.deref());
-                    }
-                }
-            }
+        for buffer_pixel in writer.buffer.buffer.chunks(pixel_bg.len()) {
+            assert_eq!(buffer_pixel, pixel_bg.deref());
         }
-
-        col += width;
     }
 }
