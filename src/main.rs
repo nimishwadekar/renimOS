@@ -1,5 +1,6 @@
 #![no_std]
 #![no_main]
+#![feature(abi_x86_interrupt)]
 #![feature(custom_test_frameworks)]
 #![test_runner(crate::test::test_runner)]
 #![reexport_test_harness_main = "test_main"]
@@ -16,7 +17,10 @@ mod interrupts;
 #[cfg(test)]
 mod test;
 
+#[cfg(not(test))]
 entry_point!(kernel_main);
+#[cfg(test)]
+entry_point!(test::test_kernel_main);
 
 #[no_mangle]
 fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
@@ -27,8 +31,7 @@ fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
     display::init(fb);
     kprintln!("Display init");
 
-    #[cfg(test)]
-    test_main();
+    interrupts::init();
 
     loop {}
 }
