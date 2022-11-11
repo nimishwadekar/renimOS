@@ -86,17 +86,36 @@ impl Writer {
                 // Print character (TODO: If slow, check if can be optimized more)
 
                 let bitmap = self.font.bitmap(ch);
-                /* let bytes_per_row = (width + 7) / 8;
-                let whole_bytes = width / 8;
-                let partial_bits = width % 8; */
-                
-                // Assumes WIDTH = 8 for current implementation.
-                for (r, &byte) in bitmap.iter().enumerate() {
-                    for c in 0..8 {
-                        if (1 << (width - c - 1)) & byte != 0 {
-                            self.buffer.draw(row + r, col + c, self.colour_fg);
-                        } else {
-                            self.buffer.draw(row + r, col + c, self.colour_bg);
+                let bytes_per_row = (width + 7) >> 3; // divide by 8
+                let partial_bits = width & 7; // modulo 8
+
+                for (r, row_chunk) in bitmap.chunks(bytes_per_row).enumerate() {
+                    let (row_chunk, rem_byte) = if partial_bits == 0 {
+                        (row_chunk, None)
+                    } else {
+                        (&row_chunk[..bytes_per_row - 1], Some(row_chunk[bytes_per_row - 1]))
+                    };
+
+                    let row = row + r;
+                    for (byte_id, byte) in row_chunk.iter().enumerate() {
+                        let col = col + (byte_id << 3); // multiply by 8
+                        for c in 0..8 {
+                            if (0b1000_0000 >> c) & byte != 0 {
+                                self.buffer.draw(row, col + c, self.colour_fg);
+                            } else {
+                                self.buffer.draw(row, col + c, self.colour_bg);
+                            }
+                        }
+                    }
+
+                    if let Some(rem_byte) = rem_byte {
+                        let col = col + (row_chunk.len() << 3);
+                        for c in 0..partial_bits {
+                            if (0b1000_0000 >> c) & rem_byte != 0 {
+                                self.buffer.draw(row, col + c, self.colour_fg);
+                            } else {
+                                self.buffer.draw(row, col + c, self.colour_bg);
+                            }
                         }
                     }
                 }
@@ -234,7 +253,7 @@ pub fn init(fb: &FrameBuffer) {
             buffer: &mut BACKBUFFER[..buffer_byte_len],
             info: fb.info()
         },
-        font: PSF::parse(include_bytes!("fonts/files/zap-light16.psf")).unwrap_or_else(|| serial_panic("PSF::parse() failed")),
+        font: PSF::parse(include_bytes!("fonts/files/zap-light20.psf")).unwrap_or_else(|| serial_panic("PSF::parse() failed")),
     })); }
 }
 
@@ -294,14 +313,39 @@ fn kprintln_output() {
     for (i, c) in s.chars().enumerate() {
         let bitmap = writer.font.bitmap(c);
 
+        let bytes_per_row = (width + 7) >> 3; // divide by 8
+        let partial_bits = width & 7; // modulo 8
+
         use core::ops::Deref;
-        for (r, &byte) in bitmap.iter().enumerate() {
-            for c in 0..8 {
-                let offset = writer.buffer.offset(row + r, col + c) * writer.buffer.info.bytes_per_pixel;
-                if (1 << (width - c - 1)) & byte != 0 {
-                    assert_eq!(&buf[offset..offset + pixel_len], pixel_fg.deref());
-                } else {
-                    assert_eq!(&buf[offset..offset + pixel_len], pixel_bg.deref());
+        for (r, row_chunk) in bitmap.chunks(bytes_per_row).enumerate() {
+            let (row_chunk, rem_byte) = if partial_bits == 0 {
+                (row_chunk, None)
+            } else {
+                (&row_chunk[..bytes_per_row - 1], Some(row_chunk[bytes_per_row - 1]))
+            };
+
+            let row = row + r;
+            for (byte_id, byte) in row_chunk.iter().enumerate() {
+                let col = col + (byte_id << 3); // multiply by 8
+                for c in 0..8 {
+                    let offset = writer.buffer.offset(row, col + c) * writer.buffer.info.bytes_per_pixel;
+                    if (0b1000_0000 >> c) & byte != 0 {
+                        assert_eq!(&buf[offset..offset + pixel_len], pixel_fg.deref());
+                    } else {
+                        assert_eq!(&buf[offset..offset + pixel_len], pixel_bg.deref());
+                    }
+                }
+            }
+
+            if let Some(rem_byte) = rem_byte {
+                let col = col + (row_chunk.len() << 3);
+                for c in 0..partial_bits {
+                    let offset = writer.buffer.offset(row, col + c) * writer.buffer.info.bytes_per_pixel;
+                    if (0b1000_0000 >> c) & rem_byte != 0 {
+                        assert_eq!(&buf[offset..offset + pixel_len], pixel_fg.deref());
+                    } else {
+                        assert_eq!(&buf[offset..offset + pixel_len], pixel_bg.deref());
+                    }
                 }
             }
         }
