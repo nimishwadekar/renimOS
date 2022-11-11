@@ -1,11 +1,21 @@
 use bootloader_locator::locate_bootloader;
+use std::env::args;
 use std::process::Command;
 use std::path::Path;
 
 pub fn main() {
+    let mut args = args();
+    args.next();
+    
+    let is_test = args.next().and_then(|arg| if arg != "test" { panic!("unknown arg") } else { Some(()) } ).is_some();
+    let kernel_binary_path = match is_test {
+        true => "target/x86_64-eden/debug/deps/eden-462ec008b5ddf143",
+        false => "target/x86_64-eden/debug/eden",
+    };
+
     let bootloader_manifest = locate_bootloader("bootloader").unwrap();
 
-    let kernel_binary = Path::new("target/x86_64-eden/debug/eden").canonicalize().unwrap();
+    let kernel_binary = Path::new(kernel_binary_path).canonicalize().unwrap();
     
     // the path to the root of this crate, set by cargo
     let manifest_dir = Path::new(env!("CARGO_MANIFEST_DIR"));

@@ -81,6 +81,30 @@
                 "kind": "build",
                 "isDefault": true
             }
-        }
+        },
+        {
+            "label": "Build and Test Legacy Boot Image In QEMU",
+            "type": "shell",
+            "command": "./build-test.sh",
+            "args": [
+                "bios"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Build and Test UEFI Boot Image In QEMU",
+            "type": "shell",
+            "command": "./build-test.sh",
+            "args": [
+                "uefi"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
     ]
 }

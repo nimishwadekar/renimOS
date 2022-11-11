@@ -1,5 +1,9 @@
 use uart_16550::SerialPort;
-use crate::spinlock::SpinLock;
+use crate::{spinlock::SpinLock, init_guard};
+
+pub const RED: &str = "\x1B[31m";
+pub const GREEN: &str = "\x1B[32m";
+pub const RESET_COLOUR: &str = "\x1B[0m";
 
 static mut SERIAL1: Option<SpinLock<SerialPort>> = None;
 
@@ -32,7 +36,10 @@ macro_rules! serial_println {
 }
 
 pub fn init() {
+    init_guard!();
+    
     let mut serial_port = unsafe { SerialPort::new(0x3F8) };
     serial_port.init();
     unsafe { SERIAL1 = Some(SpinLock::new(serial_port)); }
+    serial_print!("{}", RESET_COLOUR); // For uniform coloration.
 }

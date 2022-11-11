@@ -6,18 +6,23 @@ if [ "$#" -ne 1 ]; then
 fi
 
 firmware=$1
-if [ "$firmware" = "bios" ]; then
+if [ "$firmware" = "bios" ] || [ "$firmware" = "uefi" ]; then
     cargo build --target=x86_64-eden.json -Zbuild-std=core,compiler_builtins -Zbuild-std-features=compiler-builtins-mem && \
     cargo run -p boot && \
-    qemu-system-x86_64 -drive format=raw,file=target/x86_64-eden/debug/boot-bios-eden.img -serial stdio
-    exit 0
-fi
 
-if [ "$firmware" = "uefi" ]; then
-    cargo build --target=x86_64-eden.json -Zbuild-std=core,compiler_builtins -Zbuild-std-features=compiler-builtins-mem && \
-    cargo run -p boot && \
-    qemu-system-x86_64 -bios boot/OVMF.fd -drive format=raw,file=target/x86_64-eden/debug/boot-uefi-eden.img -serial stdio
-    exit 0
+    cmd=( qemu-system-x86_64 )
+    if [ "$firmware" = "bios" ]; then
+        cmd+=( -drive format=raw,file=target/x86_64-eden/debug/boot-bios-eden.img )
+    else
+        cmd+=( -bios boot/OVMF.fd -drive format=raw,file=target/x86_64-eden/debug/boot-uefi-eden.img )
+    fi
+
+    # Rest of the (common) flags
+    cmd+=( -serial stdio )
+
+    "${cmd[@]}"
+
+    exit "$?"
 fi
 
 echo "Argument can only be 'bios' or 'uefi'."

@@ -1,6 +1,6 @@
 use core::ptr::write_volatile;
 use bootloader::boot_info::{FrameBuffer, FrameBufferInfo};
-use crate::spinlock::SpinLock;
+use crate::{spinlock::SpinLock, init_guard, prelude::serial_panic};
 use super::{Colour, fonts::PSF};
 
 //================================================
@@ -46,11 +46,26 @@ impl core::fmt::Write for Writer {
     }
 }
 
+impl core::ops::Deref for Pixel {
+    type Target = [u8];
+
+    fn deref(&self) -> &Self::Target {
+        match self {
+            Pixel::U32(bytes) => bytes,
+        }
+    }
+}
+
 //================================================
 //  IMPLEMENTATIONS
 //================================================
 
 impl Writer {
+    pub fn colour_bg(&self) -> Colour { self.colour_bg }
+    pub fn colour_fg(&self) -> Colour { self.colour_fg }
+    pub fn set_colour_bg(&mut self, colour: Colour) { self.colour_bg = colour; }
+    pub fn set_colour_fg(&mut self, colour: Colour) { self.colour_fg = colour; }
+
     pub fn write_char(&mut self, ch: char) {
         let width = self.font.width;
         let height = self.font.height;
@@ -148,9 +163,10 @@ impl Buffer {
 
     #[inline]
     fn write_pixel(&mut self, byte_offset: usize, pixel: Pixel) {
-        match pixel {
+        self.buffer[byte_offset..byte_offset + pixel.len()].copy_from_slice(&pixel);
+        /* match pixel {
             Pixel::U32(pixel) => self.buffer[byte_offset..byte_offset + 4].copy_from_slice(&pixel),
-        };
+        }; */
     }
 
     fn get_pixel(&self, colour: Colour) -> Pixel {
@@ -170,20 +186,13 @@ impl Buffer {
     }
 }
 
-impl Pixel {
-    fn len(&self) -> usize {
-        match self {
-            Self::U32(..) => 4,
-        }
-    }
-}
-
 //================================================
 //  GLOBAL FUNCTIONS
 //================================================
 
+#[inline(always)]
 fn writer() -> &'static SpinLock<Writer> {
-    unsafe { WRITER.as_ref().expect("Framebuffer does not exist") }
+    unsafe { WRITER.as_ref().unwrap_or_else(|| serial_panic("display not initialised")) }
 }
 
 #[macro_export]
@@ -197,28 +206,106 @@ macro_rules! kprintln {
     ($($arg:tt)*) => ($crate::kprint!("{}\n", format_args!($($arg)*)));
 }
 
-#[doc(hidden)]
-pub fn _kprint(args: core::fmt::Arguments) {
-    use core::fmt::Write;
-    writer().lock().write_fmt(args).unwrap_or_else(|_e| loop {});
+#[macro_export]
+macro_rules! kprint_with_colour {
+    ($colour:expr, $($arg:tt)*) => ($crate::display::_kprint_with_colour($colour, format_args!($($arg)*)));
+}
+
+#[macro_export]
+macro_rules! kprintln_with_colour {
+    ($colour:expr, $($arg:tt)*) => ($crate::kprint_with_colour!($colour, "{}\n", format_args!($($arg)*)));
 }
 
 pub fn init(fb: &FrameBuffer) {
+    init_guard!();
+
     let buffer_start = fb.buffer().as_ptr() as usize;
     let buffer_byte_len = fb.buffer().len();
     
     // Replace with dynamically allocated memory when possible.
-    static mut BACKBUFFER: [u8; 640 * 480 * 4] = [0; 640 * 480 * 4];
-
+    static mut BACKBUFFER: [u8; 800 * 600 * 4] = [0; 800 * 600 * 4];
+    
     unsafe { WRITER = Some(SpinLock::new(Writer {
         column: 0,
         colour_fg: Colour::WHITE,
         colour_bg: Colour::BLACK,
         buffer: Buffer {
             framebuffer: core::slice::from_raw_parts_mut(buffer_start as *mut u8, buffer_byte_len),
-            buffer: &mut BACKBUFFER,
+            buffer: &mut BACKBUFFER[..buffer_byte_len],
             info: fb.info()
         },
-        font: PSF::parse(include_bytes!("fonts/files/zap-light16.psf")).unwrap(),
+        font: PSF::parse(include_bytes!("fonts/files/zap-light16.psf")).unwrap_or_else(|| serial_panic("PSF::parse() failed")),
     })); }
+}
+
+//================================================
+//  PRIVATE GLOBAL FUNCTIONS
+//================================================
+
+#[doc(hidden)]
+pub fn _kprint(args: core::fmt::Arguments) {
+    use core::fmt::Write;
+    writer().lock().write_fmt(args).unwrap_or_else(|_| serial_panic("writer.write_fmt() failed"));
+}
+
+#[doc(hidden)]
+pub fn _kprint_with_colour(colour: Colour, args: core::fmt::Arguments) {
+    use core::fmt::Write;
+    let mut writer = writer().lock();
+    let fg = writer.colour_fg();
+    writer.set_colour_fg(colour);
+    writer.write_fmt(args).unwrap_or_else(|_| serial_panic("writer.write_fmt() failed"));
+    writer.set_colour_fg(fg);
+}
+
+//================================================
+//  UNIT TESTS
+//================================================
+
+#[test_case]
+fn kprintln_simple() {
+    kprintln!("kprintln_simple output");
+}
+
+#[test_case]
+fn kprintln_many() {
+    for _ in 0..30 {
+        kprintln!("kprintln_many output");
+    }
+}
+
+#[test_case]
+fn kprintln_output() {
+    let s = "Some test string that fits on a single line";
+    kprintln!("\n{}", s);
+
+    let writer = writer().lock();
+    let buf = &writer.buffer.buffer;
+    
+    let pixel_fg = writer.buffer.get_pixel(writer.colour_fg);
+    let pixel_bg = writer.buffer.get_pixel(writer.colour_bg);
+    let pixel_len = pixel_fg.len();
+
+    let width = writer.font.width;
+
+    let row = writer.buffer.info.vertical_resolution - 2 * writer.font.height;
+    let mut col = 0;
+
+    for (i, c) in s.chars().enumerate() {
+        let bitmap = writer.font.bitmap(c);
+
+        use core::ops::Deref;
+        for (r, &byte) in bitmap.iter().enumerate() {
+            for c in 0..8 {
+                let offset = writer.buffer.offset(row + r, col + c) * writer.buffer.info.bytes_per_pixel;
+                if (1 << (width - c - 1)) & byte != 0 {
+                    assert_eq!(&buf[offset..offset + pixel_len], pixel_fg.deref());
+                } else {
+                    assert_eq!(&buf[offset..offset + pixel_len], pixel_bg.deref());
+                }
+            }
+        }
+
+        col += width;
+    }
 }
