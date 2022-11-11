@@ -13,3 +13,6 @@ x86_64 = "0.14.10"
 
 [package.metadata.bootloader]
 framebuffer-address = "0xFFFFFFFFB0000000"
+kernel-stack-size = "0x20000" # 128KB
+kernel-stack-address = "0xFFFFFFFFFF000000"
+boot-info-address = "0xFFFFFFFFFFFFF000" # Last 4KB
