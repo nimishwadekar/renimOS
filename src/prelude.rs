@@ -1,10 +1,12 @@
 #[macro_export]
 macro_rules! init_guard {
-    () => {
-        static mut INIT_GUARD: bool = false;
-        if unsafe{ INIT_GUARD } { panic!("FATAL: Double init()"); }
-        else { unsafe { INIT_GUARD = true; } }
-    };
+    () => {{
+        use core::sync::atomic::{AtomicBool, Ordering};
+        static mut INIT_GUARD: AtomicBool = AtomicBool::new(false);
+        if let Err(..) = unsafe { INIT_GUARD.compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed) } {
+            panic!("FATAL: Double init()");
+        }
+    }};
 }
 
 pub fn serial_panic(msg: &str) -> ! {
