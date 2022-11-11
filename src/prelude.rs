@@ -9,7 +9,7 @@ macro_rules! init_guard {
     }};
 }
 
-pub fn serial_panic(msg: &str) -> ! {
-    crate::serial_println!("{}ABORT{}: {}", crate::serial::RED, crate::serial::RESET_COLOUR, msg);
+pub fn serial_panic(info: &str) -> ! {
+    crate::serial_println!("{}ABORT{}: {}", crate::serial::RED, crate::serial::RESET_COLOUR, info);
     loop {}
 }
