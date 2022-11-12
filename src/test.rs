@@ -1,6 +1,6 @@
 // This module is only compiled for tests.
 
-use crate::{serial, serial_println, serial_print, display, interrupts};
+use crate::{serial, serial_println, serial_print, display, prelude::halt_cpu_and_loop, arch};
 
 pub trait Testable {
     fn run(&self);
@@ -22,11 +22,11 @@ pub fn test_kernel_main(boot_info: &'static mut bootloader::BootInfo) -> ! {
     serial::init();
     let fb = boot_info.framebuffer.as_ref().unwrap_or_else(|| serial_panic("No framebuffer")); // hang if no framebuffer.
     display::init(fb);
-    interrupts::init();
+    arch::init();
 
     crate::test_main();
 
-    loop {}
+    halt_cpu_and_loop();
 }
 
 pub fn test_runner(tests: &[&dyn Testable]) {
@@ -44,7 +44,7 @@ pub fn serial_panic(info: &str) -> ! {
     serial_println!("{}[failed]{}\n", serial::RED, serial::RESET_COLOUR);
     serial_println!("Error: {}\n", info);
     exit_qemu(QemuExitCode::Failed);
-    loop {}
+    halt_cpu_and_loop();
 }
 
 #[panic_handler]
@@ -53,7 +53,7 @@ fn panic(info: &core::panic::PanicInfo) -> ! {
     serial_println!("{}[failed]{}\n", serial::RED, serial::RESET_COLOUR);
     serial_println!("Error: {}\n", info);
     exit_qemu(QemuExitCode::Failed);
-    loop {}
+    halt_cpu_and_loop();
 }
 
 // Qemu-specific

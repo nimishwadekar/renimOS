@@ -323,7 +323,7 @@ mod tests {
         let row = writer.buffer.info.vertical_resolution - 2 * writer.font.height;
         let mut col = 0;
 
-        for (i, c) in s.chars().enumerate() {
+        for c in s.chars() {
             let bitmap = writer.font.bitmap(c);
 
             let bytes_per_row = (width + 7) >> 3; // divide by 8
