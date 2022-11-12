@@ -4,12 +4,15 @@ version = "0.1.0"
 edition = "2021"
 
 [workspace]
-members = ["boot"]
+members = [ "boot" ]
 
 [dependencies]
 bootloader = "0.10.13"
-uart_16550 = "0.2.11"
-x86_64 = "0.14.10"
+
+# x86_64 dependencies
+uart_16550 = { version = "0.2.11", optional = true }
+x86_64 = { version = "0.14.10", optional = true }
+pic8259 = { version = "0.10.2", optional = true }
 
 [package.metadata.bootloader]
 framebuffer-address = "0xFFFFFFFFB0000000"
@@ -17,3 +20,7 @@ kernel-stack-size = "0x20000" # 128KB
 kernel-stack-address = "0xFFFFFFFFFF000000"
 boot-info-address = "0xFFFFFFFFFFFFF000" # Last 4KB
 dynamic-range-start = "0xFFFF800000000000"
+
+[features]
+default = [ "x86_64" ]
+x86_64 = [ "dep:x86_64", "dep:uart_16550", "dep:pic8259" ]

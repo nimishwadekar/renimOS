@@ -25,7 +25,9 @@ pub fn init_idt() {
     }
 }
 
-// Interrupt Handlers
+//================================================
+//  INTERRUPT HANDLERS
+//================================================
 
 extern "x86-interrupt" fn breakpoint_handler(stack_frame: InterruptStackFrame) {
     kprintln!("EXCEPTION: BREAKPOINT\n{:#?}", stack_frame);
