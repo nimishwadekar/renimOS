@@ -8,3 +8,8 @@ pub fn init() {
     pic::init();
     interrupts::enable();
 }
+
+#[inline]
+pub fn hlt() {
+    x86_64::instructions::hlt();
+}

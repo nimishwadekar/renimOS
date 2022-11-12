@@ -40,6 +40,7 @@ pub fn test_runner(tests: &[&dyn Testable]) {
 }
 
 pub fn serial_panic(info: &str) -> ! {
+    crate::arch::disable_interrupts();
     serial_println!("{}[failed]{}\n", serial::RED, serial::RESET_COLOUR);
     serial_println!("Error: {}\n", info);
     exit_qemu(QemuExitCode::Failed);
@@ -48,6 +49,7 @@ pub fn serial_panic(info: &str) -> ! {
 
 #[panic_handler]
 fn panic(info: &core::panic::PanicInfo) -> ! {
+    crate::arch::disable_interrupts();
     serial_println!("{}[failed]{}\n", serial::RED, serial::RESET_COLOUR);
     serial_println!("Error: {}\n", info);
     exit_qemu(QemuExitCode::Failed);

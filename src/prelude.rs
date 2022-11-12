@@ -10,6 +10,12 @@ macro_rules! init_guard {
 }
 
 pub fn serial_panic(info: &str) -> ! {
+    crate::arch::disable_interrupts();
     crate::serial_println!("{}ABORT{}: {}", crate::serial::RED, crate::serial::RESET_COLOUR, info);
     loop {}
+}
+
+#[inline]
+pub fn halt_cpu_and_loop() -> ! {
+    loop { crate::arch::halt_cpu(); }
 }

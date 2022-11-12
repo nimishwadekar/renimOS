@@ -7,6 +7,8 @@
 
 use bootloader::{entry_point, BootInfo};
 
+use crate::prelude::halt_cpu_and_loop;
+
 mod prelude;
 mod spinlock;
 mod serial;
@@ -34,14 +36,16 @@ fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
     arch::init();
 
     kprintln_with_colour!(display::Colour::OK, "Eden initialisation completed");
-    loop {}
+    
+    halt_cpu_and_loop();
 }
 
 
 #[cfg(not(test))]
 #[panic_handler]
 fn panic(info: &core::panic::PanicInfo) -> ! {
+    arch::disable_interrupts();
     serial_println!("{}", info);
     kprintln!("{}", info);
-    loop {}
+    halt_cpu_and_loop();
 }
