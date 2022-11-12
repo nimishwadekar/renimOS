@@ -1,5 +1,6 @@
 use core::{sync::atomic::{AtomicBool, Ordering}, cell::UnsafeCell};
-use crate::interrupts;
+
+use crate::arch::{enable_interrupts, are_interrupts_enabled, disable_interrupts};
 
 //================================================
 //  TYPES
@@ -30,7 +31,7 @@ pub struct SpinLockGuard<'a, T: 'a> {
 impl<'a, T: 'a> Drop for SpinLockGuard<'a, T> {
     fn drop(&mut self) {
         self.lock.locked.store(false, Ordering::Release);
-        if self.interrupt_status { interrupts::enable(); }
+        if self.interrupt_status { enable_interrupts() }
     }
 }
 
@@ -48,6 +49,9 @@ impl<'a, T: 'a> core::ops::DerefMut for SpinLockGuard<'a, T> {
     }
 }
 
+unsafe impl<T> Send for SpinLock<T> {}
+unsafe impl<T> Sync for SpinLock<T> {}
+
 //================================================
 //  IMPLEMENTATIONS
 //================================================
@@ -58,8 +62,8 @@ impl<T> SpinLock<T> {
     }
 
     pub fn lock(&self) -> SpinLockGuard<T> {
-        let interrupt_status = interrupts::are_enabled();
-        interrupts::disable();
+        let interrupt_status = are_interrupts_enabled();
+        disable_interrupts();
 
         // Spin until the exchange succeeds.
         while self.locked.compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed).is_err() {}

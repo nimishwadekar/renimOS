@@ -12,7 +12,6 @@ mod spinlock;
 mod serial;
 mod display;
 mod arch;
-mod interrupts;
 
 #[cfg(test)]
 mod test;
