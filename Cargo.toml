@@ -8,6 +8,7 @@ members = [ "boot" ]
 
 [dependencies]
 bootloader = "0.10.13"
+pc-keyboard = "0.6.1"
 
 # x86_64 dependencies
 uart_16550 = { version = "0.2.11", optional = true }

@@ -22,6 +22,7 @@ pub fn end_of_interrupt(interrupt: InterruptIndex) {
 #[repr(u8)]
 pub enum InterruptIndex {
     Timer = PIC1_OFFSET,
+    Keyboard,
 }
 
 impl InterruptIndex {
