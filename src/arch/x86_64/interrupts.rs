@@ -14,13 +14,13 @@ pub fn are_enabled() -> bool {
 }
 
 /// Initialises the IDT.
-pub fn init() {
+pub fn init_idt() {
     init_guard!();
 
     static mut IDT: InterruptDescriptorTable = InterruptDescriptorTable::new();
     unsafe {
         IDT.breakpoint.set_handler_fn(breakpoint_handler);
-        IDT.double_fault.set_handler_fn(double_fault_handler);
+        IDT.double_fault.set_handler_fn(double_fault_handler).set_stack_index(super::gdt::DOUBLE_FAULT_IST_INDEX);
         IDT.load();
     }
 }

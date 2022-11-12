@@ -32,11 +32,7 @@ fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
     display::clear_screen();
     kprintln!("Display init");
 
-    interrupts::init();
-
-    unsafe {
-        //*(0xdeadbeef as *mut u64) = 42;
-    }
+    arch::init();
 
     kprintln_with_colour!(display::Colour::OK, "Eden initialisation completed");
     loop {}

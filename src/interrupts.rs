@@ -9,7 +9,3 @@ pub fn enable() {
 pub fn are_enabled() -> bool {
     crate::arch::x86_64::interrupts::are_enabled()
 }
-
-pub fn init() {
-    crate::arch::x86_64::interrupts::init();
-}
