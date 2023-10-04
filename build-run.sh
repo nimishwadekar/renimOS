@@ -7,7 +7,7 @@ fi
 
 firmware=$1
 if [ "$firmware" = "bios" ] || [ "$firmware" = "uefi" ]; then
-    cargo build --target=x86_64-eden.json -Zbuild-std=core,compiler_builtins -Zbuild-std-features=compiler-builtins-mem && \
+    cargo build --release --target=x86_64-eden.json -Zbuild-std=core,compiler_builtins -Zbuild-std-features=compiler-builtins-mem && \
     cargo run -p boot && \
 
     cmd=( qemu-system-x86_64 )
