@@ -7,14 +7,14 @@ fi
 
 firmware=$1
 if [ "$firmware" = "bios" ] || [ "$firmware" = "uefi" ]; then
-    cargo test --no-run --target=x86_64-eden.json -Zbuild-std=core,compiler_builtins -Zbuild-std-features=compiler-builtins-mem && \
+    cargo test --no-run --target=x86_64-renimOS.json -Zbuild-std=core,compiler_builtins -Zbuild-std-features=compiler-builtins-mem && \
     cargo run -p boot -- test && \
 
     cmd=( qemu-system-x86_64 )
     if [ "$firmware" = "bios" ]; then
-        cmd+=( -drive format=raw,file=target/x86_64-eden/debug/deps/boot-bios-eden-462ec008b5ddf143.img )
+        cmd+=( -drive format=raw,file=target/x86_64-renimOS/debug/deps/boot-bios-renimOS-462ec008b5ddf143.img )
     else
-        cmd+=( -bios boot/OVMF.fd -drive format=raw,file=target/x86_64-eden/debug/deps/boot-uefi-eden-462ec008b5ddf143.img )
+        cmd+=( -bios boot/OVMF.fd -drive format=raw,file=target/x86_64-renimOS/debug/deps/boot-uefi-renimOS-462ec008b5ddf143.img )
     fi
 
     # Rest of the (common) flags
