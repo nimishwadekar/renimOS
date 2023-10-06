@@ -12,9 +12,9 @@ if [ "$firmware" = "bios" ] || [ "$firmware" = "uefi" ]; then
 
     cmd=( qemu-system-x86_64 )
     if [ "$firmware" = "bios" ]; then
-        cmd+=( -drive format=raw,file=target/x86_64-renimOS/debug/deps/boot-bios-renimOS-462ec008b5ddf143.img )
+        cmd+=( -drive format=raw,file=target/x86_64-renimOS/debug/deps/boot-bios-renim_os-b9942581a2705eb3.img )
     else
-        cmd+=( -bios boot/OVMF.fd -drive format=raw,file=target/x86_64-renimOS/debug/deps/boot-uefi-renimOS-462ec008b5ddf143.img )
+        cmd+=( -bios boot/OVMF.fd -drive format=raw,file=target/x86_64-renimOS/debug/deps/boot-uefi-renim_os-b9942581a2705eb3.img )
     fi
 
     # Rest of the (common) flags

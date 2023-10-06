@@ -9,7 +9,7 @@ pub fn main() {
     
     let is_test = args.next().and_then(|arg| if arg != "test" { panic!("unknown arg") } else { Some(()) } ).is_some();
     let kernel_binary_path = match is_test {
-        true => "target/x86_64-renimOS/debug/deps/renimOS-462ec008b5ddf143",
+        true => "target/x86_64-renimOS/debug/deps/renim_os-b9942581a2705eb3",
         false => "target/x86_64-renimOS/debug/renimOS",
     };
 
