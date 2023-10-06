@@ -35,7 +35,7 @@ fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
 
     arch::init();
 
-    kprintln_with_colour!(display::Colour::OK, "renimOS initialisation completed");
+    kprintln_with_colour!(display::Colour::OK, "renim initialisation completed");
     
     halt_cpu_and_loop();
 }

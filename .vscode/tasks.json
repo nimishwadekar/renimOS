@@ -7,7 +7,7 @@
             "command": "cargo",
             "args": [
                 "build",
-                "--target=x86_64-renimOS.json",
+                "--target=x86_64-renim.json",
                 "-Zbuild-std=core,compiler_builtins",
                 "-Zbuild-std-features=compiler-builtins-mem"
             ],
@@ -36,7 +36,7 @@
             "command": "qemu-system-x86_64",
             "args": [
                 "-drive",
-                "format=raw,file=target/x86_64-renimOS/debug/boot-bios-renimOS.img"
+                "format=raw,file=target/x86_64-renim/debug/boot-bios-renim.img"
             ],
             "group": {
                 "kind": "build",
@@ -51,7 +51,7 @@
                 "-bios",
                 "boot/OVMF.fd",
                 "-drive",
-                "format=raw,file=target/x86_64-renimOS/debug/boot-uefi-renimOS.img"
+                "format=raw,file=target/x86_64-renim/debug/boot-uefi-renim.img"
             ],
             "group": {
                 "kind": "build",
