@@ -18,7 +18,7 @@ where
 }
 
 #[no_mangle]
-pub fn test_kernel_main(boot_info: &'static mut bootloader::BootInfo) -> ! {
+pub fn test_kernel_main(boot_info: &'static mut bootloader_api::BootInfo) -> ! {
     serial::init();
     let fb = boot_info.framebuffer.as_ref().unwrap_or_else(|| serial_panic("No framebuffer")); // hang if no framebuffer.
     display::init(fb);

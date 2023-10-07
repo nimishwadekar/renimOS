@@ -2,14 +2,11 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Build Kernel Binary",
+            "label": "Build",
             "type": "shell",
             "command": "cargo",
             "args": [
-                "build",
-                "--target=x86_64-renim.json",
-                "-Zbuild-std=core,compiler_builtins",
-                "-Zbuild-std-features=compiler-builtins-mem"
+                "build"
             ],
             "group": {
                 "kind": "build",
@@ -17,65 +14,11 @@
             }
         },
         {
-            "label": "Build Boot Image",
+            "label": "Run (BIOS)",
             "type": "shell",
             "command": "cargo",
             "args": [
-                "run",
-                "-p",
-                "boot"
-            ],
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            }
-        },
-        {
-            "label": "Run Legacy Boot Image In QEMU",
-            "type": "shell",
-            "command": "qemu-system-x86_64",
-            "args": [
-                "-drive",
-                "format=raw,file=target/x86_64-renim/debug/boot-bios-renim.img"
-            ],
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            }
-        },
-        {
-            "label": "Run UEFI Boot Image In QEMU",
-            "type": "shell",
-            "command": "qemu-system-x86_64",
-            "args": [
-                "-bios",
-                "boot/OVMF.fd",
-                "-drive",
-                "format=raw,file=target/x86_64-renim/debug/boot-uefi-renim.img"
-            ],
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            }
-        },
-        {
-            "label": "Build and Run Legacy Boot Image In QEMU",
-            "type": "shell",
-            "command": "./build-run.sh",
-            "args": [
-                "bios"
-            ],
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            }
-        },
-        {
-            "label": "Build and Run UEFI Boot Image In QEMU",
-            "type": "shell",
-            "command": "./build-run.sh",
-            "args": [
-                "uefi"
+                "run"
             ],
             "group": {
                 "kind": "build",
@@ -100,6 +43,18 @@
             "command": "./build-test.sh",
             "args": [
                 "uefi"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Clean",
+            "type": "shell",
+            "command": "cargo",
+            "args": [
+                "clean"
             ],
             "group": {
                 "kind": "build",

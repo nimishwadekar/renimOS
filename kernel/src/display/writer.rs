@@ -1,5 +1,5 @@
 use core::ptr::write_volatile;
-use bootloader::boot_info::{FrameBuffer, FrameBufferInfo};
+use bootloader_api::info::{FrameBuffer, FrameBufferInfo};
 use crate::{spinlock::SpinLock, init_guard, prelude::serial_panic};
 use super::{Colour, fonts::PSF};
 
@@ -77,8 +77,8 @@ impl Writer {
         let width = self.font.width;
         let height = self.font.height;
 
-        let buffer_width = self.buffer.info.horizontal_resolution;
-        let buffer_height =  self.buffer.info.vertical_resolution;
+        let buffer_width = self.buffer.info.width;
+        let buffer_height =  self.buffer.info.height;
 
         match ch {
             '\n' => self.newline(),
@@ -196,10 +196,10 @@ impl Buffer {
     }
 
     fn get_pixel(&self, colour: Colour) -> Pixel {
-        use bootloader::boot_info::PixelFormat;
+        use bootloader_api::info::PixelFormat;
         match self.info.pixel_format {
-            PixelFormat::RGB => Pixel::U32([colour.r, colour.g, colour.b, 0]),
-            PixelFormat::BGR => Pixel::U32([colour.b, colour.g, colour.r, 0]),
+            PixelFormat::Rgb => Pixel::U32([colour.r, colour.g, colour.b, 0]),
+            PixelFormat::Bgr => Pixel::U32([colour.b, colour.g, colour.r, 0]),
             PixelFormat::U8 => unimplemented!("PixelFormat::U8"),
             _ => unimplemented!("Unsupported pixel format"),
         }
@@ -253,7 +253,7 @@ pub fn init(fb: &FrameBuffer) {
     let buffer_byte_len = fb.buffer().len();
     
     // Replace with dynamically allocated memory when possible.
-    static mut BACKBUFFER: [u8; 800 * 600 * 4] = [0; 800 * 600 * 4];
+    static mut BACKBUFFER: [u8; 1280 * 720 * 3] = [0; 1280 * 720 * 3];
     
     unsafe { WRITER = Some(SpinLock::new(Writer {
         column: 0,
@@ -320,7 +320,7 @@ mod tests {
 
         let width = writer.font.width;
 
-        let row = writer.buffer.info.vertical_resolution - 2 * writer.font.height;
+        let row = writer.buffer.info.height - 2 * writer.font.height;
         let mut col = 0;
 
         for c in s.chars() {
