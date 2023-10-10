@@ -14,11 +14,53 @@
             }
         },
         {
-            "label": "Run (BIOS)",
+            "label": "Run Debug (BIOS)",
             "type": "shell",
             "command": "cargo",
             "args": [
                 "run"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Test Debug (BIOS)",
+            "type": "shell",
+            "command": "cargo",
+            "args": [
+                "run",
+                "--no-default-features",
+                "--features=test"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Run Release (BIOS)",
+            "type": "shell",
+            "command": "cargo",
+            "args": [
+                "run",
+                "--release"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Test Release (BIOS)",
+            "type": "shell",
+            "command": "cargo",
+            "args": [
+                "run",
+                "--release",
+                "--no-default-features",
+                "--features=test"
             ],
             "group": {
                 "kind": "build",
