@@ -4,7 +4,9 @@ fn main() {
     let bios_path = env!("BIOS_PATH");
     
     // choose whether to start the UEFI or BIOS image
-    let uefi = false;
+    let mut args = std::env::args();
+    args.next();
+    let uefi = args.next().filter(|e| e.as_str() == "--uefi").is_some();
 
     let mut cmd = std::process::Command::new("qemu-system-x86_64");
     if uefi {

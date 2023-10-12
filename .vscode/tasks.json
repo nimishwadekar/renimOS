@@ -52,11 +52,13 @@
             }
         },
         {
-            "label": "Build and Test Legacy Boot Image In QEMU",
+            "label": "Run Debug (UEFI)",
             "type": "shell",
-            "command": "./build-test.sh",
+            "command": "cargo",
             "args": [
-                "bios"
+                "run",
+                "--",
+                "--uefi"
             ],
             "group": {
                 "kind": "build",
@@ -64,11 +66,29 @@
             }
         },
         {
-            "label": "Build and Test UEFI Boot Image In QEMU",
+            "label": "Test Debug (UEFI)",
             "type": "shell",
-            "command": "./build-test.sh",
+            "command": "cargo",
             "args": [
-                "uefi"
+                "run",
+                "--features=test",
+                "--",
+                "--uefi"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Run Release (UEFI)",
+            "type": "shell",
+            "command": "cargo",
+            "args": [
+                "run",
+                "--release",
+                "--",
+                "--uefi"
             ],
             "group": {
                 "kind": "build",
