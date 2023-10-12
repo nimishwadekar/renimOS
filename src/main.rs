@@ -15,9 +15,10 @@ fn main() {
     }
     cmd.arg("-serial").arg("stdio");
 
-    #[cfg(feature = "test")] {
+    #[cfg(feature = "test")]
+    {
         cmd.arg("-device").arg("isa-debug-exit,iobase=0xf4,iosize=0x04");
-        //cmd.arg("-display").arg("none");
+        cmd.arg("-display").arg("none");
     }
 
     let mut child = cmd.spawn().unwrap();

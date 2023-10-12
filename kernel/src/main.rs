@@ -1,13 +1,10 @@
 #![no_std]
 #![no_main]
 #![feature(abi_x86_interrupt)]
-#![feature(custom_test_frameworks)]
-#![test_runner(crate::test::test_runner)]
-#![reexport_test_harness_main = "test_main"]
 
 use bootloader_api::{entry_point, BootInfo};
 
-use crate::prelude::halt_cpu_and_loop;
+use crate::prelude::*;
 
 mod prelude;
 mod spinlock;
@@ -15,40 +12,16 @@ mod serial;
 mod display;
 mod arch;
 
-#[cfg(test)]
-mod test;
+#[cfg(testf)]
+mod test_framework;
 
-#[link_section = ".text.startup"]
-fn init() -> i32 {
-    1234
-}
 
-#[link_section = ".init_array"]
-static INIT: fn() -> i32 = init;
-
-#[link_section = ".init_array"]
-static INIT2: u64 = 5;
-
-#[cfg(not(ftest))]
 #[no_mangle]
 fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
     serial::init();
     serial_println!("Serial init");
-    //serial_println!("{:x?} -> {:x?} = {}", &INIT as *const fn() -> i32, INIT as usize, INIT());
-    serial_println!("{:x?}", boot_info.ramdisk_len);
-    let inits = unsafe { core::slice::from_raw_parts(boot_info.ramdisk_len as usize as *const usize, 1) };
-    serial_println!("{:x?}", inits[0]);
-    let func = inits[0] as *const ();
-    serial_println!("{:x?}", func);
-    let func: fn()->i32 = unsafe { core::mem::transmute(func) };
-    serial_println!("{:x?}", func);
-    serial_println!("{}", (func)());
 
-    //serial_println!("{}", );
-
-    halt_cpu_and_loop();
-
-    let fb = boot_info.framebuffer.as_ref().unwrap_or_else(|| crate::prelude::serial_panic("No framebuffer")); // hang if no framebuffer.
+    let fb = boot_info.framebuffer.as_ref().unwrap_or_else(|| serial_panic("No framebuffer")); // hang if no framebuffer.
     display::init(fb);
     display::clear_screen();
     kprintln!("Display init");
@@ -60,16 +33,16 @@ fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
     halt_cpu_and_loop();
 }
 
-#[cfg(ftest)]
-#[no_mangle]
-fn kernel_main(boot_info: &'static mut BootInfo) -> ! {
+/// This function is called by the test main function to initialise the kernel for testing.
+#[cfg(testf)]
+fn kernel_test_init(boot_info: &'static BootInfo) {
     serial::init();
-    serial_println!("[TEST] Serial init");
-    halt_cpu_and_loop();
+    let fb = boot_info.framebuffer.as_ref().unwrap_or_else(|| serial_panic("No framebuffer")); // hang if no framebuffer.
+    display::init(fb);
+    arch::init();
 }
 
-
-#[cfg(not(test))]
+#[cfg(not(testf))]
 #[panic_handler]
 fn panic(info: &core::panic::PanicInfo) -> ! {
     arch::disable_interrupts();
@@ -90,7 +63,7 @@ pub const BOOTLOADER_CONFIG: BootloaderConfig = {
     config
 };
 
-#[cfg(not(test))]
+#[cfg(not(testf))]
 entry_point!(kernel_main, config = &BOOTLOADER_CONFIG);
-#[cfg(test)]
-entry_point!(test::test_kernel_main, config = &BOOTLOADER_CONFIG);
+#[cfg(testf)]
+entry_point!(test_framework::test_kernel_main, config = &BOOTLOADER_CONFIG);

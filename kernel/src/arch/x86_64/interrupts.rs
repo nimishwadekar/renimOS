@@ -73,10 +73,10 @@ extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: InterruptStac
 //  UNIT TESTS
 //================================================
 
-mod tests {
+/* mod tests {
     #[test_case]
     fn breakpoint_exception() {
         // invoke a breakpoint exception
         x86_64::instructions::interrupts::int3();
     }
-}
+} */

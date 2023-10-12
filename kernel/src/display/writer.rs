@@ -292,21 +292,21 @@ pub fn _kprint_with_colour(colour: Colour, args: core::fmt::Arguments) {
 //  UNIT TESTS
 //================================================
 
-#[cfg(test)]
+#[cfg(testf)]
 mod tests {
-    #[test_case]
+    #[tests::unit]
     fn kprintln_simple() {
         kprintln!("kprintln_simple output");
     }
 
-    #[test_case]
+    #[tests::unit]
     fn kprintln_many() {
         for _ in 0..30 {
             kprintln!("kprintln_many output");
         }
     }
 
-    #[test_case]
+    #[tests::unit]
     fn kprintln_output() {
         let s = "Some test string that fits on a single line";
         kprintln!("\n{}", s);
@@ -367,7 +367,7 @@ mod tests {
         }
     }
 
-    #[test_case]
+    #[tests::unit]
     fn clear_screen() {
         super::clear_screen();
 

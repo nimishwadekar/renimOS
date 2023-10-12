@@ -118,8 +118,6 @@ impl<'a> Kernel<'a> {
     }
 }
 
-static mut TEMP: u64 = 0;
-
 /// Loads the kernel ELF executable into memory and switches to it.
 ///
 /// This function is a convenience function that first calls [`set_up_mappings`], then
@@ -136,6 +134,11 @@ where
     I: ExactSizeIterator<Item = D> + Clone,
     D: LegacyMemoryRegion,
 {
+    let init_array: (Option<u64>, u64) = match kernel.elf.find_section_by_name(".init_array") {
+        Some(sec) => (Some(sec.address()), sec.size()),
+        None => (None, 0),
+    };
+
     let config = kernel.config;
     let mut mappings = set_up_mappings(
         kernel,
@@ -152,8 +155,8 @@ where
         &mut page_tables,
         &mut mappings,
         system_info,
+        init_array,
     );
-    boot_info.ramdisk_len =  unsafe {TEMP};
     switch_to_kernel(page_tables, mappings, boot_info);
 }
 
@@ -200,8 +203,6 @@ where
     let config = kernel.config;
     let kernel_slice_start = kernel.start_address as u64;
     let kernel_slice_len = u64::try_from(kernel.len).unwrap();
-
-    unsafe { TEMP = kernel.elf.find_section_by_name(".init_array").unwrap().address() };
 
     let (entry_point, tls_template) = load_kernel::load_kernel(
         kernel,
@@ -451,6 +452,7 @@ pub fn create_boot_info<I, D>(
     page_tables: &mut PageTables,
     mappings: &mut Mappings,
     system_info: SystemInfo,
+    init_array: (Option<u64>, u64),
 ) -> &'static mut BootInfo
 where
     I: ExactSizeIterator<Item = D> + Clone,
@@ -521,6 +523,8 @@ where
 
     log::info!("Create bootinfo");
 
+    let (init_array_addr, init_array_len) = init_array;
+
     // create boot info
     let boot_info = boot_info.write({
         let mut info = BootInfo::new(memory_regions.into());
@@ -548,6 +552,8 @@ where
             .map(|addr| addr.as_u64())
             .into();
         info.ramdisk_len = mappings.ramdisk_slice_len;
+        info.init_array_addr = init_array_addr.into();
+        info.init_array_len = init_array_len;
         info._test_sentinel = boot_config._test_sentinel;
         info
     });

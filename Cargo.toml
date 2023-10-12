@@ -3,22 +3,13 @@ name = "renim"
 version = "0.1.0"
 edition = "2021"
 
-[build-dependencies]
-bootloader = { path = "bootloader/bootloader-0.11.4" }
+[build-dependencies.bootloader]
+path = "bootloader/bootloader-0.11.4"
 
 [build-dependencies.renim-kernel]
 path = "kernel"
 artifact = "bin"
 target = "x86_64-unknown-none"
-optional = true
-
-[build-dependencies.renim-kernel-test]
-package = "renim-kernel"
-path = "kernel"
-artifact = "bin"
-target = "x86_64-unknown-none"
-features = [ "test" ]
-optional = true
 
 [dependencies]
 ovmf-prebuilt = "0.1.0-alpha.1"
@@ -26,7 +17,7 @@ ovmf-prebuilt = "0.1.0-alpha.1"
 [workspace]
 members = [
     "kernel",
-    "kernel/test-runner",
+    "kernel/test-proc-macro",
     "bootloader/bootloader-0.11.4",
     "bootloader/bootloader-x86_64-common-0.11.4",
     "bootloader/bootloader-x86_64-uefi-0.11.4",
@@ -34,6 +25,4 @@ members = [
 ]
 
 [features]
-default = [ "run" ]
-run = [ "dep:renim-kernel" ]
-test = [ "dep:renim-kernel-test" ]
+test = [ "renim-kernel/test" ]

@@ -4,9 +4,10 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-bootloader_api = "0.11"
+bootloader_api = { path = "../bootloader/bootloader_api-0.11.4" }
 pc-keyboard = "0.6.1"
-#test-runner = { path = "test-runner" }
+
+tests = { package = "test-proc-macro", path = "test-proc-macro", optional = true }
 
 # x86_64 dependencies
 uart_16550 = { version = "0.2.11", optional = true }
@@ -16,4 +17,4 @@ pic8259 = { version = "0.10.2", optional = true }
 [features]
 default = [ "x86_64" ]
 x86_64 = [ "dep:x86_64", "dep:uart_16550", "dep:pic8259" ]
-test = []
+test = [ "dep:tests" ]
