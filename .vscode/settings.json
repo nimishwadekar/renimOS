@@ -1,8 +1,3 @@
 {
-    "rust-analyzer.cargo.features": [
-        "test"
-    ],
-    "rust-analyzer.diagnostics.disabled": [
-        "unresolved-proc-macro",
-    ]
+    "rust-analyzer.cargo.features": "all"
 }
